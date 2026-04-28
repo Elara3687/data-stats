@@ -4,9 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📊 作品数据统计助手</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             background: #f5f7fa;
@@ -21,7 +28,7 @@
             width: 100%;
             background: white;
             border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
             padding: 32px;
         }
         h1 {
@@ -69,9 +76,58 @@
             border-color: #4f46e5;
             background: #eef2ff;
         }
-        .upload-icon { font-size: 40px; margin-bottom: 12px; }
-        .upload-text { font-size: 16px; font-weight: 500; color: #1f2937; margin-bottom: 6px; }
-        .upload-hint { color: #6b7280; font-size: 13px; }
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+        .upload-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+        .upload-hint {
+            color: #6b7280;
+            font-size: 13px;
+        }
+        .config-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+        .config-tab {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+        .config-tab.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        .manual-input-area {
+            display: none;
+            margin-top: 12px;
+        }
+        .manual-input-area.active {
+            display: block;
+        }
+        .manual-input-area textarea {
+            width: 100%;
+            height: 120px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 13px;
+            font-family: monospace;
+            resize: vertical;
+        }
         .config-status {
             display: inline-block;
             margin-top: 8px;
@@ -81,7 +137,8 @@
             background: #e0e7ff;
             color: #3730a3;
         }
-        #fileInfo, #configFileInfo {
+        #fileInfo,
+        #configFileInfo {
             margin-bottom: 16px;
             padding: 10px 16px;
             background: #ecfdf5;
@@ -104,12 +161,25 @@
             background: white;
             border-radius: 16px;
             padding: 18px 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
             border: 1px solid #f0f0f0;
         }
-        .stat-label { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
-        .stat-value { font-size: 32px; font-weight: 700; color: #1a1a2e; }
-        .stat-unit { font-size: 13px; font-weight: 400; color: #9ca3af; margin-left: 4px; }
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .stat-unit {
+            font-size: 13px;
+            font-weight: 400;
+            color: #9ca3af;
+            margin-left: 4px;
+        }
         .summary-box {
             background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%);
             border-radius: 16px;
@@ -135,6 +205,8 @@
             border-radius: 16px;
             border: 1px solid #edf2f7;
             margin-bottom: 20px;
+            max-height: 500px;
+            overflow-y: auto;
         }
         table {
             width: 100%;
@@ -150,13 +222,18 @@
             color: #334155;
             border-bottom: 1px solid #e2e8f0;
             white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
         td {
             padding: 10px 14px;
             border-bottom: 1px solid #f1f5f9;
             color: #1e293b;
         }
-        tr:last-child td { border-bottom: none; }
+        tr:last-child td {
+            border-bottom: none;
+        }
         .export-btn {
             background: #4f46e5;
             color: white;
@@ -188,8 +265,17 @@
             transform: translateY(-1px);
             box-shadow: 0 8px 16px rgba(79, 70, 229, 0.2);
         }
-        .empty-state { text-align: center; padding: 40px; color: #9ca3af; }
-        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #9ca3af;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
         .unmatched-badge {
             background: #fef3c7;
             color: #92400e;
@@ -198,678 +284,1236 @@
             font-size: 12px;
             margin-left: 8px;
         }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            margin-bottom: 24px;
+        }
+        .total-row {
+            background: #f8fafc;
+            font-weight: 600;
+            border-top: 2px solid #e2e8f0;
+        }
+        .date-separator {
+            background: #f0f4ff;
+            font-weight: 600;
+            color: #4f46e5;
+        }
+        .config-requirement {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .config-requirement strong {
+            color: #4f46e5;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1><span>📋 作品数据统计助手</span></h1>
-    <div class="subtitle">上传后台导出的表格 · 自动统计评级、状态、创作者明细</div>
+    <div class="container">
+        <h1><span>📋 作品数据统计助手</span></h1>
+        <div class="subtitle">上传后台导出的表格 · 自动统计评级、状态、创作者明细</div>
 
-    <div class="upload-section">
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">📂</div>
-            <div class="upload-text">上传作品数据表</div>
-            <div class="upload-hint">支持 .xlsx, .xls, .csv 格式</div>
-            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📂</div>
+                <div class="upload-text">上传作品数据表</div>
+                <div class="upload-hint">支持 .xlsx, .xls, .csv 格式</div>
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+            </div>
+            <div class="upload-area config-area" id="configUploadArea">
+                <div class="upload-icon">👤</div>
+                <div class="upload-text">审核人配置</div>
+                <div class="upload-hint">上传表格或手动输入（三列：日期 / 创作者昵称 / 审核人）</div>
+                <div class="config-requirement">
+                    <strong>日期格式要求：</strong>"4月27日" 或 "2026-04-27"<br>
+                    <strong>匹配方式：</strong>按「日期(月日) + 创作者昵称」匹配审核人
+                </div>
+                <div class="config-tabs">
+                    <div class="config-tab active" data-tab="upload">📁 上传表格</div>
+                    <div class="config-tab" data-tab="manual">✏️ 手动输入</div>
+                </div>
+                <div id="uploadTabContent">
+                    <div class="upload-hint" style="margin-top: 8px;">支持 .xlsx, .xls, .csv 格式</div>
+                    <input type="file" id="configFileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+                </div>
+                <div class="manual-input-area" id="manualInputArea">
+                    <textarea id="manualConfigInput" placeholder="直接粘贴表格内容（日期、创作者昵称、审核人）&#10;例如：&#10;4月27日  张三  凯丽&#10;4月27日  李四  李倩&#10;4月28日  张三  胡婷"></textarea>
+                    <button class="export-btn" id="confirmManualConfig" style="margin-top: 8px; padding: 8px 16px; font-size: 13px;">✅ 确认输入</button>
+                </div>
+                <span class="config-status" id="configStatus">未加载配置</span>
+            </div>
         </div>
-        <div class="upload-area config-area" id="configUploadArea">
-            <div class="upload-icon">👤</div>
-            <div class="upload-text">上传负责人配置表</div>
-            <div class="upload-hint">包含「用户昵称」和「负责人」两列</div>
-            <span class="config-status" id="configStatus">未加载配置</span>
-            <input type="file" id="configFileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+
+        <div id="fileInfo"></div>
+        <div id="configFileInfo"></div>
+
+        <div id="statsContainer" style="display: none;">
+            <div class="stats-grid" id="statsCards"></div>
+            <div class="summary-box" id="summaryBox"></div>
+
+            <div class="section-title">
+                <span>👤 创作者评级汇总</span>
+                <span style="font-size: 14px; font-weight: 400; color: #6b7280;" id="creatorCount"></span>
+            </div>
+            <div class="table-wrapper">
+                <table id="creatorTable">
+                    <thead>
+                        <tr>
+                            <th>用户昵称</th>
+                            <th>用户UID</th>
+                            <th>总作品数</th>
+                            <th>S+</th>
+                            <th>S</th>
+                            <th>A+</th>
+                            <th>A</th>
+                            <th>B+</th>
+                            <th>B</th>
+                            <th>S率</th>
+                        </tr>
+                    </thead>
+                    <tbody id="creatorTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="section-title">
+                <span>🧑‍💼 审核人效统计</span>
+            </div>
+
+            <div class="stats-grid" id="auditStatsCards"></div>
+
+            <div class="section-title">
+                <span>📈 每日评级趋势</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="ratingChart"></canvas>
+            </div>
+
+            <div class="section-title">
+                <span>📊 每日审核员人效</span>
+            </div>
+            <div class="table-wrapper">
+                <table id="efficiencyTable">
+                    <thead id="efficiencyTableHead"></thead>
+                    <tbody id="efficiencyTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="section-title">
+                <span>📋 每日审核员评级明细</span>
+            </div>
+            <div class="table-wrapper">
+                <table id="auditDetailTable">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>审核人</th>
+                            <th>S+</th>
+                            <th>S</th>
+                            <th>A+</th>
+                            <th>A</th>
+                            <th>B+</th>
+                            <th>B</th>
+                            <th>无法评级</th>
+                            <th>审核量级合计</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditDetailTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="btn-group">
+                <button class="export-btn" id="exportSummaryBtn">⬇️ 导出汇总表</button>
+                <button class="export-btn secondary" id="exportFullBtn">📦 导出总表</button>
+                <button class="export-btn secondary" id="exportEfficiencyBtn">🧑‍💼 导出审核人效表</button>
+                <button class="export-btn" id="exportAuditDetailBtn">📊 导出每日审核明细</button>
+            </div>
         </div>
     </div>
 
-    <div id="fileInfo"></div>
-    <div id="configFileInfo"></div>
+    <script>
+        (function() {
+            "use strict";
 
-    <div id="statsContainer" style="display: none;">
-        <div class="stats-grid" id="statsCards"></div>
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const configFileInput = document.getElementById('configFileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const configFileInfo = document.getElementById('configFileInfo');
+            const configStatus = document.getElementById('configStatus');
+            const statsContainer = document.getElementById('statsContainer');
+            const statsCards = document.getElementById('statsCards');
+            const summaryBox = document.getElementById('summaryBox');
+            const creatorTableBody = document.getElementById('creatorTableBody');
+            const creatorCountSpan = document.getElementById('creatorCount');
+            const auditStatsCards = document.getElementById('auditStatsCards');
+            const efficiencyTableHead = document.getElementById('efficiencyTableHead');
+            const efficiencyTableBody = document.getElementById('efficiencyTableBody');
+            const auditDetailTableBody = document.getElementById('auditDetailTableBody');
+            const exportSummaryBtn = document.getElementById('exportSummaryBtn');
+            const exportFullBtn = document.getElementById('exportFullBtn');
+            const exportEfficiencyBtn = document.getElementById('exportEfficiencyBtn');
+            const exportAuditDetailBtn = document.getElementById('exportAuditDetailBtn');
+            const manualInputArea = document.getElementById('manualInputArea');
+            const manualConfigInput = document.getElementById('manualConfigInput');
+            const confirmManualConfigBtn = document.getElementById('confirmManualConfig');
+            const uploadTabContent = document.getElementById('uploadTabContent');
 
-        <div class="summary-box" id="summaryBox"></div>
+            let parsedData = [];
+            let statistics = null;
+            let rawRows = [];
+            let headers = [];
+            let colMap = {};
+            let managerMap = new Map();
+            let allDates = [];
+            let ratingChart = null;
+            let activeConfigMode = 'upload';
 
-        <div class="section-title">
-            <span>👤 创作者评级汇总</span>
-            <span style="font-size: 14px; font-weight: 400; color: #6b7280;" id="creatorCount"></span>
-        </div>
-        <div class="table-wrapper">
-            <table id="creatorTable">
-                <thead>
-                    <tr>
-                        <th>用户昵称</th>
-                        <th>用户UID</th>
-                        <th>总作品数</th>
-                        <th>S+</th>
-                        <th>S</th>
-                        <th>A+</th>
-                        <th>A</th>
-                        <th>B&B+</th>
-                        <th>S率</th>
-                    </tr>
-                </thead>
-                <tbody id="creatorTableBody"></tbody>
-            </table>
-        </div>
-
-        <div class="section-title">
-            <span>🧑‍💼 负责人维度分析</span>
-            <span style="font-size: 14px; font-weight: 400; color: #6b7280;" id="managerCount"></span>
-        </div>
-        <div class="table-wrapper">
-            <table id="managerTable">
-                <thead id="managerTableHead">
-                </thead>
-                <tbody id="managerTableBody">
-                </tbody>
-            </table>
-        </div>
-
-        <div class="btn-group">
-            <button class="export-btn" id="exportSummaryBtn">
-                ⬇️ 导出汇总表
-            </button>
-            <button class="export-btn secondary" id="exportDetailMultiBtn">
-                📚 导出明细表（每人一个Sheet）
-            </button>
-            <button class="export-btn secondary" id="exportFullBtn">
-                📦 导出总表
-            </button>
-            <button class="export-btn" id="exportManagerBtn">
-                🧑‍💼 导出负责人表
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
-(function(){
-    "use strict";
-
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('fileInput');
-    const configUploadArea = document.getElementById('configUploadArea');
-    const configFileInput = document.getElementById('configFileInput');
-    const fileInfo = document.getElementById('fileInfo');
-    const configFileInfo = document.getElementById('configFileInfo');
-    const configStatus = document.getElementById('configStatus');
-    const statsContainer = document.getElementById('statsContainer');
-    const statsCards = document.getElementById('statsCards');
-    const summaryBox = document.getElementById('summaryBox');
-    const creatorTableBody = document.getElementById('creatorTableBody');
-    const creatorCountSpan = document.getElementById('creatorCount');
-    const managerTableHead = document.getElementById('managerTableHead');
-    const managerTableBody = document.getElementById('managerTableBody');
-    const managerCountSpan = document.getElementById('managerCount');
-    const exportSummaryBtn = document.getElementById('exportSummaryBtn');
-    const exportDetailMultiBtn = document.getElementById('exportDetailMultiBtn');
-    const exportFullBtn = document.getElementById('exportFullBtn');
-    const exportManagerBtn = document.getElementById('exportManagerBtn');
-
-    let parsedData = [];
-    let statistics = null;
-    let rawRows = [];
-    let headers = [];
-    let colMap = {};
-    let managerMap = new Map();
-    let allDates = [];
-
-    function formatDate(date) {
-        const d = new Date(date);
-        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    }
-
-    function formatDateShort(dateStr) {
-        const parts = dateStr.split('-');
-        if (parts.length === 3) {
-            return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
-        }
-        return dateStr;
-    }
-
-    function normalizeRating(rating) {
-        if (!rating) return null;
-        const r = String(rating).trim().toUpperCase();
-        if (r === 'S+') return 'S+';
-        if (r === 'S') return 'S';
-        if (r === 'A+') return 'A+';
-        if (r === 'A') return 'A';
-        if (r === 'B' || r === 'B+') return 'B&B+';
-        return r;
-    }
-
-    function parseExcelDate(value) {
-        if (!value) return null;
-        if (typeof value === 'number') {
-            const date = XLSX.SSF.parse_date_code(value);
-            return new Date(date.y, date.m - 1, date.d);
-        }
-        const str = String(value).trim();
-        if (str.includes('/') || str.includes('-')) {
-            return new Date(str);
-        }
-        return null;
-    }
-
-    // 解析负责人配置表（用昵称匹配）
-    function parseConfigFile(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-            
-            if (rows.length < 2) {
-                alert('配置表至少需要包含表头和一行数据');
-                return;
+            // ========== 工具函数 ==========
+            function formatDate(date) {
+                const d = new Date(date);
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             }
 
-            const headers = rows[0];
-            let nameCol = -1, managerCol = -1;
-
-            headers.forEach((h, idx) => {
-                const str = String(h || '').trim();
-                if (str.includes('昵称') || str === '用户昵称' || str === '昵称') nameCol = idx;
-                if (str.includes('负责人')) managerCol = idx;
-            });
-
-            if (nameCol === -1 || managerCol === -1) {
-                alert('配置表需要包含「用户昵称」和「负责人」两列');
-                return;
+            function formatMonthDay(date) {
+                const d = new Date(date);
+                return `${d.getMonth()+1}月${d.getDate()}日`;
             }
 
-            managerMap.clear();
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.every(cell => !cell)) continue;
-                const nickname = String(row[nameCol] || '').trim();
-                const manager = String(row[managerCol] || '').trim();
-                if (nickname && manager) {
-                    managerMap.set(nickname, manager);
+            function formatDateShort(dateStr) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+                }
+                return dateStr;
+            }
+
+            function formatDateChinese(dateStr) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    return `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
+                }
+                return dateStr;
+            }
+
+            function normalizeRating(rating) {
+                if (!rating) return null;
+                const r = String(rating).trim().toUpperCase();
+                if (r === 'S+') return 'S+';
+                if (r === 'S') return 'S';
+                if (r === 'A+') return 'A+';
+                if (r === 'A') return 'A';
+                if (r === 'B+') return 'B+';
+                if (r === 'B') return 'B';
+                return r;
+            }
+
+            function parseExcelDate(value) {
+                if (!value) return null;
+                if (typeof value === 'number') {
+                    const date = XLSX.SSF.parse_date_code(value);
+                    return new Date(date.y, date.m - 1, date.d);
+                }
+                const str = String(value).trim();
+                const dtMatch = str.match(/(\d{4})-(\d{1,2})-(\d{1,2})\s+/);
+                if (dtMatch) {
+                    return new Date(parseInt(dtMatch[1]), parseInt(dtMatch[2]) - 1, parseInt(dtMatch[3]));
+                }
+                const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+                if (isoMatch) {
+                    return new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]));
+                }
+                if (str.includes('/') || str.includes('-')) {
+                    const d = new Date(str);
+                    if (!isNaN(d.getTime())) return d;
+                }
+                return null;
+            }
+
+            function parseDateFromString(str) {
+                if (!str) return null;
+                const s = String(str).trim();
+                const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+                if (isoMatch) {
+                    return new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]));
+                }
+                const dtMatch = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})\s+/);
+                if (dtMatch) {
+                    return new Date(parseInt(dtMatch[1]), parseInt(dtMatch[2]) - 1, parseInt(dtMatch[3]));
+                }
+                const slashMatch = s.match(/(\d{4})[\/](\d{1,2})[\/](\d{1,2})/);
+                if (slashMatch) {
+                    return new Date(parseInt(slashMatch[1]), parseInt(slashMatch[2]) - 1, parseInt(slashMatch[3]));
+                }
+                const cnMatch = s.match(/(\d{1,2})月(\d{1,2})日/);
+                if (cnMatch) {
+                    return new Date(2026, parseInt(cnMatch[1]) - 1, parseInt(cnMatch[2]));
+                }
+                const num = parseFloat(s);
+                if (!isNaN(num) && num > 30000 && num < 60000) {
+                    const date = XLSX.SSF.parse_date_code(num);
+                    return new Date(date.y, date.m - 1, date.d);
+                }
+                return null;
+            }
+
+            function findManager(dateStr, nickname) {
+                if (!dateStr || !nickname) return null;
+                const cleanNickname = nickname.trim();
+                const workDate = parseDateFromString(dateStr);
+                const workMonthDay = workDate ? formatMonthDay(workDate) : dateStr;
+                const key = workMonthDay + '__' + cleanNickname;
+                if (managerMap.has(key)) {
+                    return managerMap.get(key);
+                }
+                for (const [k, v] of managerMap) {
+                    const parts = k.split('__');
+                    if (parts.length === 2) {
+                        if (parts[1].toLowerCase() === cleanNickname.toLowerCase() && parts[0] === workMonthDay) {
+                            return v;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function getCellValue(row, colIndex) {
+                if (colIndex < 0 || !row) return '';
+                const val = row[colIndex];
+                return val !== undefined && val !== null ? val : '';
+            }
+
+            // ========== 解析配置 ==========
+            function parseConfigRows(rows, source) {
+                if (rows.length < 2) {
+                    alert('配置数据至少需要包含表头和一行数据');
+                    return false;
+                }
+
+                const headerRow = rows[0];
+                let dateCol = -1,
+                    nameCol = -1,
+                    managerCol = -1;
+
+                headerRow.forEach((h, idx) => {
+                    const str = String(h || '').trim();
+                    if (str.includes('日期') || str === 'date' || str === '时间') dateCol = idx;
+                    if (str.includes('昵称') || str === '用户昵称' || str === '创作者') nameCol = idx;
+                    if (str.includes('审核人') || str.includes('负责人') || str === '审核员' || str === 'auditor')
+                        managerCol = idx;
+                });
+
+                if (dateCol === -1 || nameCol === -1 || managerCol === -1) {
+                    if (headerRow.length >= 3) {
+                        dateCol = 0;
+                        nameCol = 1;
+                        managerCol = 2;
+                    } else {
+                        alert('配置表需要包含三列：日期、创作者昵称、审核人\n\n日期格式示例：4月27日 或 2026-04-27');
+                        return false;
+                    }
+                }
+
+                const newMap = new Map();
+                const duplicates = [];
+                const multiManager = new Map();
+
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.every(cell => !cell || String(cell).trim() === '')) continue;
+
+                    let dateRaw = row[dateCol];
+                    const nickname = String(row[nameCol] || '').trim();
+                    const manager = String(row[managerCol] || '').trim();
+
+                    if (!nickname || !manager) continue;
+
+                    let dateStr = '';
+                    if (dateRaw !== undefined && dateRaw !== null) {
+                        if (typeof dateRaw === 'number') {
+                            const date = XLSX.SSF.parse_date_code(dateRaw);
+                            dateStr = `${date.m}月${date.d}日`;
+                        } else {
+                            const str = String(dateRaw).trim();
+                            const d = parseDateFromString(str);
+                            if (d) {
+                                dateStr = formatMonthDay(d);
+                            } else {
+                                dateStr = str;
+                            }
+                        }
+                    }
+
+                    if (!dateStr) continue;
+
+                    const key = dateStr + '__' + nickname;
+
+                    if (newMap.has(key)) {
+                        duplicates.push(`日期: ${dateStr}, 昵称: ${nickname}, 出现多次`);
+                    }
+
+                    newMap.set(key, manager);
+
+                    if (!multiManager.has(nickname)) {
+                        multiManager.set(nickname, new Map());
+                    }
+                    multiManager.get(nickname).set(dateStr, manager);
+                }
+
+                if (duplicates.length > 0) {
+                    let msg = '以下记录日期+昵称重复，请修正后重新上传/输入：\n\n';
+                    msg += duplicates.join('\n');
+                    alert(msg);
+                    return false;
+                }
+
+                const multiList = [];
+                for (const [nickname, dateMap] of multiManager) {
+                    const uniqueManagers = new Set(dateMap.values());
+                    if (uniqueManagers.size > 1) {
+                        let detail = `昵称: ${nickname} → `;
+                        const parts = [];
+                        for (const [d, m] of dateMap) {
+                            parts.push(`${d}: ${m}`);
+                        }
+                        detail += parts.join(' | ');
+                        multiList.push(detail);
+                    }
+                }
+
+                if (multiList.length > 0) {
+                    let msg = '以下创作者在不同日期对应了不同审核人，请核对是否正确：\n\n';
+                    msg += multiList.join('\n');
+                    alert(msg);
+                }
+
+                managerMap = newMap;
+
+                console.log('=== 配置加载完成 ===');
+                console.log('配置项数量:', newMap.size);
+                for (const [key, value] of newMap) {
+                    console.log('  KEY:', key, '→ VALUE:', value);
+                }
+                console.log('==================');
+
+                return true;
+            }
+
+            function parseConfigFile(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                    if (parseConfigRows(rows, file.name)) {
+                        configStatus.textContent = `已加载 ${managerMap.size} 条配置`;
+                        configStatus.style.background = '#d1fae5';
+                        configStatus.style.color = '#065f46';
+                        configFileInfo.style.display = 'block';
+                        configFileInfo.innerHTML =
+                            `✅ 已加载审核配置：${file.name} · 共 ${managerMap.size} 条（按日期+昵称匹配）`;
+
+                        if (parsedData.length > 0) {
+                            calculateStats();
+                            renderUI();
+                        }
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            function parseManualConfig(text) {
+                if (!text.trim()) {
+                    alert('请输入配置数据');
+                    return;
+                }
+
+                const lines = text.trim().split('\n');
+                const rows = [];
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+
+                    let cells = trimmed.split('\t');
+                    if (cells.length < 3) {
+                        cells = trimmed.split(',');
+                    }
+                    if (cells.length < 3) {
+                        cells = trimmed.split(/\s{2,}/);
+                    }
+                    if (cells.length < 3) {
+                        cells = trimmed.split(/\s+/);
+                    }
+
+                    if (cells.length >= 3) {
+                        rows.push(cells.map(c => c.trim()));
+                    }
+                }
+
+                if (rows.length < 2) {
+                    alert('未能解析到有效数据，请检查格式\n\n需要表头+至少一行数据\n列之间用Tab/逗号/空格分隔\n日期格式示例：4月27日 或 2026-04-27');
+                    return;
+                }
+
+                if (parseConfigRows(rows, '手动输入')) {
+                    configStatus.textContent = `已加载 ${managerMap.size} 条配置`;
+                    configStatus.style.background = '#d1fae5';
+                    configStatus.style.color = '#065f46';
+                    configFileInfo.style.display = 'block';
+                    configFileInfo.innerHTML = `✅ 已加载审核配置：手动输入 · 共 ${managerMap.size} 条（按日期+昵称匹配）`;
+
+                    if (parsedData.length > 0) {
+                        calculateStats();
+                        renderUI();
+                    }
                 }
             }
 
-            configStatus.textContent = `已加载 ${managerMap.size} 条配置`;
-            configStatus.style.background = '#d1fae5';
-            configStatus.style.color = '#065f46';
-            configFileInfo.style.display = 'block';
-            configFileInfo.innerHTML = `✅ 已加载负责人配置：${file.name} · 共 ${managerMap.size} 条（通过昵称匹配）`;
-
-            if (parsedData.length > 0) {
-                calculateStats();
-                renderUI();
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function findManager(nickname) {
-        if (managerMap.has(nickname)) return managerMap.get(nickname);
-        const trimmed = nickname.trim();
-        if (managerMap.has(trimmed)) return managerMap.get(trimmed);
-        for (const [key, val] of managerMap) {
-            if (key.toLowerCase() === nickname.toLowerCase()) return val;
-        }
-        return null;
-    }
-
-    // 解析作品数据表
-    function parseFile(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-            
-            if (rows.length < 2) {
-                alert('表格至少需要包含表头和一行数据');
-                return;
+            function clearConfig() {
+                managerMap.clear();
+                configStatus.textContent = '未加载配置';
+                configStatus.style.background = '#e0e7ff';
+                configStatus.style.color = '#3730a3';
+                configFileInfo.style.display = 'none';
+                if (parsedData.length > 0) {
+                    calculateStats();
+                    renderUI();
+                }
             }
 
-            rawRows = rows;
-            headers = rows[0];
-            
-            colMap = {
-                publishDate: -1, offlineStatus: -1, rating: -1, nickname: -1, uid: -1, tags: -1,
-                workId: -1, shareLink: -1, title: -1, taskCount: -1, viewCount: -1,
-                likeCount: -1, commentCount: -1, remixCount: -1
-            };
+            // ========== 解析作品数据 ==========
+            function parseFile(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-            headers.forEach((h, idx) => {
-                const headerStr = String(h || '').trim();
-                if (headerStr === '作品发布日期') colMap.publishDate = idx;
-                else if (headerStr === '下架状态') colMap.offlineStatus = idx;
-                else if (headerStr === '作品评级') colMap.rating = idx;
-                else if (headerStr === '用户昵称') colMap.nickname = idx;
-                else if (headerStr === '用户 UID') colMap.uid = idx;
-                else if (headerStr === '标签') colMap.tags = idx;
-                else if (headerStr === '作品 ID') colMap.workId = idx;
-                else if (headerStr === '分享链接') colMap.shareLink = idx;
-                else if (headerStr === '作品标题') colMap.title = idx;
-                else if (headerStr === '任务数') colMap.taskCount = idx;
-                else if (headerStr === '浏览量') colMap.viewCount = idx;
-                else if (headerStr === '点赞数') colMap.likeCount = idx;
-                else if (headerStr === '评论数') colMap.commentCount = idx;
-                else if (headerStr === 'Remix数') colMap.remixCount = idx;
-            });
+                    if (rows.length < 2) {
+                        alert('表格至少需要包含表头和一行数据');
+                        return;
+                    }
 
-            const records = [];
-            const dateSet = new Set();
-            
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.every(cell => !cell)) continue;
+                    rawRows = rows;
+                    headers = rows[0];
 
-                const pubDateRaw = colMap.publishDate >= 0 ? row[colMap.publishDate] : null;
-                const offlineStatus = colMap.offlineStatus >= 0 ? String(row[colMap.offlineStatus] || '').trim() : '';
-                const ratingRaw = colMap.rating >= 0 ? row[colMap.rating] : null;
-                const nickname = colMap.nickname >= 0 ? String(row[colMap.nickname] || '未知用户').trim() : '未知用户';
-                const uid = colMap.uid >= 0 ? String(row[colMap.uid] || '').trim() : '';
-                const tags = colMap.tags >= 0 ? String(row[colMap.tags] || '').trim() : '';
+                    colMap = {
+                        publishDate: -1,
+                        offlineStatus: -1,
+                        rating: -1,
+                        nickname: -1,
+                        uid: -1,
+                        tags: -1,
+                        workId: -1,
+                        shareLink: -1,
+                        title: -1,
+                        taskCount: -1,
+                        viewCount: -1,
+                        likeCount: -1,
+                        commentCount: -1,
+                        remixCount: -1
+                    };
 
-                const pubDate = parseExcelDate(pubDateRaw);
-                const pubDateStr = pubDate ? formatDate(pubDate) : '';
-                
-                if (pubDateStr) dateSet.add(pubDateStr);
+                    headers.forEach((h, idx) => {
+                        const headerStr = String(h || '').trim();
+                        if (headerStr === '作品发布日期') colMap.publishDate = idx;
+                        else if (headerStr === '下架状态') colMap.offlineStatus = idx;
+                        else if (headerStr === '作品评级') colMap.rating = idx;
+                        else if (headerStr === '用户昵称') colMap.nickname = idx;
+                        else if (headerStr === '用户 UID') colMap.uid = idx;
+                        else if (headerStr === '标签') colMap.tags = idx;
+                        else if (headerStr === '作品 ID') colMap.workId = idx;
+                        else if (headerStr === '分享链接') colMap.shareLink = idx;
+                        else if (headerStr === '作品标题') colMap.title = idx;
+                        else if (headerStr === '任务数') colMap.taskCount = idx;
+                        else if (headerStr === '浏览量') colMap.viewCount = idx;
+                        else if (headerStr === '点赞数') colMap.likeCount = idx;
+                        else if (headerStr === '评论数') colMap.commentCount = idx;
+                        else if (headerStr === 'Remix数') colMap.remixCount = idx;
+                    });
 
-                records.push({
-                    rowIndex: i,
-                    publishDate: pubDate,
-                    publishDateStr: pubDateStr,
-                    offlineStatus: offlineStatus,
-                    rating: ratingRaw,
-                    nickname: nickname,
-                    uid: uid,
-                    tags: tags
+                    const records = [];
+                    const dateSet = new Set();
+
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.every(cell => !cell)) continue;
+
+                        const pubDateRaw = colMap.publishDate >= 0 ? row[colMap.publishDate] : null;
+                        const offlineStatus = colMap.offlineStatus >= 0 ? String(row[colMap.offlineStatus] || '').trim() : '';
+                        const ratingRaw = colMap.rating >= 0 ? row[colMap.rating] : null;
+                        const nickname = colMap.nickname >= 0 ? String(row[colMap.nickname] || '未知用户').trim() : '未知用户';
+                        const uid = colMap.uid >= 0 ? String(row[colMap.uid] || '').trim() : '';
+                        const tags = colMap.tags >= 0 ? String(row[colMap.tags] || '').trim() : '';
+
+                        const pubDate = parseExcelDate(pubDateRaw);
+                        const pubDateStr = pubDate ? formatDate(pubDate) : '';
+
+                        if (pubDateStr) dateSet.add(pubDateStr);
+
+                        records.push({
+                            rowIndex: i,
+                            publishDate: pubDate,
+                            publishDateStr: pubDateStr,
+                            offlineStatus: offlineStatus,
+                            rating: ratingRaw,
+                            nickname: nickname,
+                            uid: uid,
+                            tags: tags
+                        });
+                    }
+
+                    allDates = Array.from(dateSet).sort();
+                    parsedData = records;
+
+                    fileInfo.style.display = 'block';
+                    fileInfo.innerHTML = `✅ 已加载文件：${file.name} · 共 ${records.length} 条记录`;
+
+                    calculateStats();
+                    renderUI();
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            function calculateStats() {
+                const validDates = parsedData.filter(r => r.publishDate).map(r => r.publishDate);
+                let minDate = validDates.length > 0 ? new Date(Math.min(...validDates)) : new Date();
+                let maxDate = validDates.length > 0 ? new Date(Math.max(...validDates)) : new Date();
+
+                const rangeStartStr = formatDate(minDate);
+                const rangeEndStr = formatDate(maxDate);
+
+                parsedData.forEach(r => {
+                    const normRating = normalizeRating(r.rating);
+                    r.isSWork = (normRating === 'S+' || normRating === 'S');
                 });
-            }
 
-            allDates = Array.from(dateSet).sort();
-            
-            parsedData = records;
-            fileInfo.style.display = 'block';
-            fileInfo.innerHTML = `✅ 已加载文件：${file.name} · 共 ${records.length} 条记录`;
-            
-            calculateStats();
-            renderUI();
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function calculateStats() {
-        const validDates = parsedData.filter(r => r.publishDate).map(r => r.publishDate);
-        let minDate = validDates.length > 0 ? new Date(Math.min(...validDates)) : new Date();
-        let maxDate = validDates.length > 0 ? new Date(Math.max(...validDates)) : new Date();
-
-        const rangeStartStr = formatDate(minDate);
-        const rangeEndStr = formatDate(maxDate);
-
-        parsedData.forEach(r => {
-            const normRating = normalizeRating(r.rating);
-            r.isSWork = (normRating === 'S+' || normRating === 'S');
-        });
-
-        const rangePublished = parsedData.filter(r => r.publishDate);
-        const published = parsedData.filter(r => r.offlineStatus === '已发布');
-        const offline = parsedData.filter(r => r.offlineStatus === '已下架');
-        const unrated = parsedData.filter(r => {
-            const rating = r.rating;
-            return rating === null || rating === undefined || String(rating).trim() === '';
-        });
-        const pendingModify = parsedData.filter(r => r.tags.includes('待修改'));
-        const cannotPlay = parsedData.filter(r => r.tags.includes('玩不了'));
-
-        const ratedWorks = parsedData.filter(r => {
-            const rating = r.rating;
-            return rating !== null && rating !== undefined && String(rating).trim() !== '';
-        });
-
-        const ratingCount = { 'S+': 0, 'S': 0, 'A+': 0, 'A': 0, 'B&B+': 0 };
-        ratedWorks.forEach(r => {
-            const norm = normalizeRating(r.rating);
-            if (ratingCount.hasOwnProperty(norm)) ratingCount[norm]++;
-        });
-
-        const totalRated = ratedWorks.length;
-        const sPlusAndS = (ratingCount['S+'] || 0) + (ratingCount['S'] || 0);
-        const sRate = totalRated > 0 ? ((sPlusAndS / totalRated) * 100).toFixed(2) : '0.00';
-
-        // 按创作者统计
-        const creatorMap = new Map();
-        const creatorOrder = [];
-        parsedData.forEach(rec => {
-            const key = rec.uid + '__' + rec.nickname;
-            if (!creatorMap.has(key)) {
-                creatorMap.set(key, {
-                    uid: rec.uid,
-                    nickname: rec.nickname,
-                    total: 0,
-                    weekTotal: 0,
-                    weekSCount: 0,
-                    'S+': 0, 'S': 0, 'A+': 0, 'A': 0, 'B&B+': 0
+                const published = parsedData.filter(r => r.offlineStatus === '已发布');
+                const offline = parsedData.filter(r => r.offlineStatus === '已下架');
+                const unrated = parsedData.filter(r => {
+                    const rating = r.rating;
+                    return rating === null || rating === undefined || String(rating).trim() === '';
                 });
-                creatorOrder.push(key);
+                const pendingModify = parsedData.filter(r => r.tags.includes('待修改'));
+                const cannotPlay = parsedData.filter(r => r.tags.includes('玩不了'));
+
+                const ratedWorks = parsedData.filter(r => {
+                    const rating = r.rating;
+                    return rating !== null && rating !== undefined && String(rating).trim() !== '';
+                });
+
+                const ratingCount = { 'S+': 0, 'S': 0, 'A+': 0, 'A': 0, 'B+': 0, 'B': 0 };
+                ratedWorks.forEach(r => {
+                    const norm = normalizeRating(r.rating);
+                    if (ratingCount.hasOwnProperty(norm)) ratingCount[norm]++;
+                });
+
+                const totalRated = ratedWorks.length;
+                const sPlusAndS = (ratingCount['S+'] || 0) + (ratingCount['S'] || 0);
+                const sRate = totalRated > 0 ? ((sPlusAndS / totalRated) * 100).toFixed(2) : '0.00';
+
+                // 按创作者统计
+                const creatorMap = new Map();
+                const creatorOrder = [];
+                parsedData.forEach(rec => {
+                    const key = rec.uid + '__' + rec.nickname;
+                    if (!creatorMap.has(key)) {
+                        creatorMap.set(key, {
+                            uid: rec.uid,
+                            nickname: rec.nickname,
+                            total: 0,
+                            'S+': 0, 'S': 0, 'A+': 0, 'A': 0, 'B+': 0, 'B': 0
+                        });
+                        creatorOrder.push(key);
+                    }
+                    const creator = creatorMap.get(key);
+                    creator.total++;
+                    const norm = normalizeRating(rec.rating);
+                    if (creator.hasOwnProperty(norm)) creator[norm]++;
+                });
+
+                const creators = creatorOrder.map(key => {
+                    const c = creatorMap.get(key);
+                    const ratedTotal = c['S+'] + c['S'] + c['A+'] + c['A'] + c['B+'] + c['B'];
+                    const sCount = (c['S+'] || 0) + (c['S'] || 0);
+                    const sRateCreator = ratedTotal > 0 ? ((sCount / ratedTotal) * 100).toFixed(2) : '0.00';
+                    return { ...c, ratedTotal, sRate: sRateCreator };
+                });
+
+                creators.sort((a, b) => parseFloat(b.sRate) - parseFloat(a.sRate));
+
+                // 每日评级总量
+                const dailyRatedCount = new Map();
+                allDates.forEach(d => dailyRatedCount.set(d, 0));
+                parsedData.forEach(rec => {
+                    const dateStr = rec.publishDateStr;
+                    if (!dateStr) return;
+                    const rating = rec.rating;
+                    const isRated = rating !== null && rating !== undefined && String(rating).trim() !== '';
+                    if (isRated) {
+                        dailyRatedCount.set(dateStr, (dailyRatedCount.get(dateStr) || 0) + 1);
+                    }
+                });
+
+                // 收集审核人
+                const auditorSet = new Set();
+                for (const [key, value] of managerMap) {
+                    auditorSet.add(value);
+                }
+
+                // 每日审核员人效
+                const dailyAuditorData = new Map();
+                allDates.forEach(d => dailyAuditorData.set(d, new Map()));
+
+                parsedData.forEach(rec => {
+                    const dateStr = rec.publishDateStr;
+                    if (!dateStr || !allDates.includes(dateStr)) return;
+                    const auditor = findManager(dateStr, rec.nickname) || '未分配';
+                    const dayMap = dailyAuditorData.get(dateStr);
+                    dayMap.set(auditor, (dayMap.get(auditor) || 0) + 1);
+                });
+
+                const finalAuditorSet = new Set();
+                for (const [key, value] of managerMap) finalAuditorSet.add(value);
+                for (const [date, map] of dailyAuditorData) {
+                    for (const auditor of map.keys()) finalAuditorSet.add(auditor);
+                }
+                const sortedAuditors = Array.from(finalAuditorSet).sort();
+                const unassignedIdx = sortedAuditors.indexOf('未分配');
+                if (unassignedIdx > -1) {
+                    sortedAuditors.splice(unassignedIdx, 1);
+                    sortedAuditors.push('未分配');
+                }
+
+                const efficiencyData = [];
+                allDates.forEach(dateStr => {
+                    const dayMap = dailyAuditorData.get(dateStr) || new Map();
+                    const row = { date: dateStr };
+                    let dayTotal = 0;
+                    let dayMax = 0;
+                    let auditorCount = 0;
+
+                    sortedAuditors.forEach(auditor => {
+                        const count = dayMap.get(auditor) || 0;
+                        row[auditor] = count;
+                        if (auditor !== '未分配') {
+                            dayTotal += count;
+                            dayMax = Math.max(dayMax, count);
+                            if (count > 0) auditorCount++;
+                        }
+                    });
+
+                    row.avg = auditorCount > 0 ? (dayTotal / auditorCount).toFixed(1) : '0.0';
+                    row.max = dayMax;
+                    efficiencyData.push(row);
+                });
+
+                // 每日审核员评级明细
+                const auditDetailData = [];
+                const dailyDetailMap = new Map();
+                allDates.forEach(d => dailyDetailMap.set(d, new Map()));
+
+                parsedData.forEach(rec => {
+                    const dateStr = rec.publishDateStr;
+                    if (!dateStr || !allDates.includes(dateStr)) return;
+
+                    const auditor = findManager(dateStr, rec.nickname) || '未分配';
+                    const isOffline = rec.offlineStatus === '已下架';
+                    const rating = rec.rating;
+                    const isRated = rating !== null && rating !== undefined && String(rating).trim() !== '';
+                    const normRating = normalizeRating(rating);
+                    const tags = rec.tags;
+
+                    const isPendingModify = tags.includes('待修改');
+                    const isCannotPlay = tags.includes('玩不了');
+                    const isControlled = tags.includes('待讨论&已管控');
+                    const isDiscussing = rec.tags.includes('待讨论');
+                    const isUnratable = isOffline || isPendingModify || isCannotPlay || isControlled || isDiscussing;
+
+                    if (!dailyDetailMap.has(dateStr)) {
+                        dailyDetailMap.set(dateStr, new Map());
+                    }
+                    const dayMap = dailyDetailMap.get(dateStr);
+                    if (!dayMap.has(auditor)) {
+                        dayMap.set(auditor, {
+                            'S+': 0, 'S': 0, 'A+': 0, 'A': 0, 'B+': 0, 'B': 0, unratable: 0, total: 0
+                        });
+                    }
+
+                    const counts = dayMap.get(auditor);
+                    if (isUnratable) {
+                        if (isOffline && !isRated) {
+                            // 已下架且评级为空，不计入
+                        } else {
+                            counts.unratable++;
+                            counts.total++;
+                        }
+                    } else if (isRated && ratingCount.hasOwnProperty(normRating)) {
+                        counts[normRating]++;
+                        counts.total++;
+                    }
+                });
+
+                allDates.forEach(dateStr => {
+                    const dayMap = dailyDetailMap.get(dateStr) || new Map();
+                    const auditorsForDate = [];
+                    let dateTotalSPlus = 0, dateTotalS = 0, dateTotalAPlus = 0, dateTotalA = 0,
+                        dateTotalBPlus = 0, dateTotalB = 0, dateTotalUnratable = 0, dateTotalAll = 0;
+
+                    for (const [auditor, counts] of dayMap) {
+                        auditorsForDate.push({ date: dateStr, auditor, ...counts });
+                        dateTotalSPlus += counts['S+'];
+                        dateTotalS += counts['S'];
+                        dateTotalAPlus += counts['A+'];
+                        dateTotalA += counts['A'];
+                        dateTotalBPlus += counts['B+'];
+                        dateTotalB += counts['B'];
+                        dateTotalUnratable += counts.unratable;
+                        dateTotalAll += counts.total;
+                    }
+
+                    auditorsForDate.sort((a, b) => b.total - a.total);
+
+                    if (auditorsForDate.length > 0) {
+                        auditDetailData.push({
+                            type: 'date',
+                            date: dateStr,
+                            auditors: auditorsForDate,
+                            totalRow: {
+                                date: dateStr,
+                                auditor: '合计',
+                                'S+': dateTotalSPlus, 'S': dateTotalS, 'A+': dateTotalAPlus,
+                                'A': dateTotalA, 'B+': dateTotalBPlus, 'B': dateTotalB,
+                                unratable: dateTotalUnratable, total: dateTotalAll
+                            }
+                        });
+                    }
+                });
+
+                const totalWorks = parsedData.length;
+                const workDays = allDates.length;
+                const dailyAvgRated = workDays > 0 ? (totalRated / workDays).toFixed(1) : '0.0';
+                const unratedPercent = totalWorks > 0 ? ((unrated.length / totalWorks) * 100).toFixed(2) : '0.00';
+
+                statistics = {
+                    rangeStart: rangeStartStr,
+                    rangeEnd: rangeEndStr,
+                    rangePublishedCount: parsedData.filter(r => r.publishDate).length,
+                    publishedCount: published.length,
+                    offlineCount: offline.length,
+                    unratedCount: unrated.length,
+                    pendingModifyCount: pendingModify.length,
+                    cannotPlayCount: cannotPlay.length,
+                    ratingCount,
+                    totalRated,
+                    sRate,
+                    creators,
+                    allDates,
+                    sortedAuditors,
+                    efficiencyData,
+                    auditDetailData,
+                    dailyRatedCount,
+                    totalWorks,
+                    workDays,
+                    dailyAvgRated,
+                    unratedPercent,
+                    summaryText: `从${formatDateChinese(rangeStartStr)}至${formatDateChinese(rangeEndStr)} 已发布${published.length}条，未评级${unrated.length}条，待修改和玩不了${pendingModify.length + cannotPlay.length}条；S+ ${ratingCount['S+']}条，S ${ratingCount['S']}条，A+ ${ratingCount['A+']}条，A ${ratingCount['A']}条，B+ ${ratingCount['B+']}条，B ${ratingCount['B']}条；S率约为${sRate}%`
+                };
+
+                console.log('=== 匹配测试（前5条） ===');
+                parsedData.slice(0, 5).forEach(rec => {
+                    const auditor = findManager(rec.publishDateStr, rec.nickname) || '未分配';
+                    console.log('日期:', rec.publishDateStr, '→ 月日:', formatMonthDay(rec.publishDate), '昵称:', rec.nickname, '→ 审核人:', auditor);
+                });
+                console.log('========================');
             }
-            const creator = creatorMap.get(key);
-            creator.total++;
-            if (rec.isSWork && rec.publishDate) {
-                creator.weekTotal++;
-                creator.weekSCount++;
-            } else if (rec.publishDate) {
-                creator.weekTotal++;
-            }
-            const norm = normalizeRating(rec.rating);
-            if (creator.hasOwnProperty(norm)) creator[norm]++;
-        });
 
-        const creators = creatorOrder.map(key => {
-            const c = creatorMap.get(key);
-            const ratedTotal = c['S+'] + c['S'] + c['A+'] + c['A'] + c['B&B+'];
-            const sCount = (c['S+'] || 0) + (c['S'] || 0);
-            const sRateCreator = ratedTotal > 0 ? ((sCount / ratedTotal) * 100).toFixed(2) : '0.00';
-            const weekSRate = c.weekTotal > 0 ? ((c.weekSCount / c.weekTotal) * 100).toFixed(2) : '0.00';
-            return { ...c, ratedTotal, sRate: sRateCreator, weekSRate };
-        });
+            function renderUI() {
+                if (!statistics) return;
+                statsContainer.style.display = 'block';
 
-        // 按负责人统计
-        const managerStats = new Map();
-        
-        parsedData.forEach(rec => {
-            const manager = findManager(rec.nickname) || '未分配';
-            const dateStr = rec.publishDateStr;
-            
-            if (!managerStats.has(manager)) {
-                managerStats.set(manager, { total: 0, daily: new Map() });
-            }
-            const ms = managerStats.get(manager);
-            ms.total++;
-            if (dateStr) {
-                ms.daily.set(dateStr, (ms.daily.get(dateStr) || 0) + 1);
-            }
-        });
+                const s = statistics;
 
-        const managers = Array.from(managerStats.entries()).map(([name, data]) => {
-            return { name, total: data.total, daily: data.daily };
-        }).sort((a, b) => b.total - a.total);
+                const cardsHtml = `
+                    <div class="stat-card"><div class="stat-label">📅 发布区间 (${s.rangeStart} ~ ${s.rangeEnd})</div><div class="stat-value">${s.rangePublishedCount}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">✅ 已发布</div><div class="stat-value">${s.publishedCount}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">📦 已下架</div><div class="stat-value">${s.offlineCount}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">❓ 未评级</div><div class="stat-value">${s.unratedCount}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">✏️ 待修改</div><div class="stat-value">${s.pendingModifyCount}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">🚫 玩不了</div><div class="stat-value">${s.cannotPlayCount}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">🏆 S+</div><div class="stat-value">${s.ratingCount['S+']}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">🌟 S</div><div class="stat-value">${s.ratingCount['S']}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">📈 A+</div><div class="stat-value">${s.ratingCount['A+']}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">📊 A</div><div class="stat-value">${s.ratingCount['A']}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">📋 B+</div><div class="stat-value">${s.ratingCount['B+']}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">📋 B</div><div class="stat-value">${s.ratingCount['B']}<span class="stat-unit">条</span></div></div>
+                    <div class="stat-card"><div class="stat-label">📐 S率</div><div class="stat-value">${s.sRate}<span class="stat-unit">%</span></div></div>
+                `;
+                statsCards.innerHTML = cardsHtml;
+                summaryBox.textContent = s.summaryText;
 
-        const monthDayFormat = (dateStr) => {
-            const parts = dateStr.split('-');
-            if (parts.length === 3) {
-                return `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
-            }
-            return dateStr;
-        };
-
-        statistics = {
-            rangeStart: rangeStartStr,
-            rangeEnd: rangeEndStr,
-            rangeStartShort: monthDayFormat(rangeStartStr),
-            rangeEndShort: monthDayFormat(rangeEndStr),
-            rangePublishedCount: rangePublished.length,
-            publishedCount: published.length,
-            offlineCount: offline.length,
-            unratedCount: unrated.length,
-            pendingModifyCount: pendingModify.length,
-            cannotPlayCount: cannotPlay.length,
-            ratingCount,
-            totalRated,
-            sRate,
-            creators,
-            managers,
-            allDates,
-            summaryText: `从${monthDayFormat(rangeStartStr)}至${monthDayFormat(rangeEndStr)} 已发布${published.length}条，未评级${unrated.length}条，待修改和玩不了${pendingModify.length + cannotPlay.length}条；S+ ${ratingCount['S+']}条，S ${ratingCount['S']}条，A+ ${ratingCount['A+']}条，A ${ratingCount['A']}条，B&B+ ${ratingCount['B&B+']}条；S率约为${sRate}%`
-        };
-    }
-
-    function renderUI() {
-        if (!statistics) return;
-        statsContainer.style.display = 'block';
-
-        const s = statistics;
-
-        const cardsHtml = `
-            <div class="stat-card"><div class="stat-label">📅 发布区间 (${s.rangeStart} ~ ${s.rangeEnd})</div><div class="stat-value">${s.rangePublishedCount}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">✅ 已发布</div><div class="stat-value">${s.publishedCount}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">📦 已下架</div><div class="stat-value">${s.offlineCount}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">❓ 未评级</div><div class="stat-value">${s.unratedCount}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">✏️ 待修改</div><div class="stat-value">${s.pendingModifyCount}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">🚫 玩不了</div><div class="stat-value">${s.cannotPlayCount}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">🏆 S+</div><div class="stat-value">${s.ratingCount['S+']}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">🌟 S</div><div class="stat-value">${s.ratingCount['S']}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">📈 A+</div><div class="stat-value">${s.ratingCount['A+']}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">📊 A</div><div class="stat-value">${s.ratingCount['A']}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">📋 B&B+</div><div class="stat-value">${s.ratingCount['B&B+']}<span class="stat-unit">条</span></div></div>
-            <div class="stat-card"><div class="stat-label">📐 S率</div><div class="stat-value">${s.sRate}<span class="stat-unit">%</span></div></div>
-        `;
-        statsCards.innerHTML = cardsHtml;
-        summaryBox.textContent = s.summaryText;
-
-        if (s.creators.length === 0) {
-            creatorTableBody.innerHTML = `<tr><td colspan="9" class="empty-state">暂无创作者数据</td></tr>`;
-            creatorCountSpan.textContent = '';
-        } else {
-            let rowsHtml = '';
-            s.creators.forEach(c => {
-                rowsHtml += `<tr><td>${c.nickname}</td><td>${c.uid}</td><td>${c.total}</td><td>${c['S+']}</td><td>${c['S']}</td><td>${c['A+']}</td><td>${c['A']}</td><td>${c['B&B+']}</td><td>${c.sRate}%</td></tr>`;
-            });
-            creatorTableBody.innerHTML = rowsHtml;
-            creatorCountSpan.textContent = `共 ${s.creators.length} 位创作者`;
-        }
-
-        renderManagerTable();
-    }
-
-    function renderManagerTable() {
-        const s = statistics;
-        const dates = s.allDates;
-        
-        let headHtml = '<tr><th>负责人</th><th>总数</th>';
-        dates.forEach(d => {
-            headHtml += `<th>${formatDateShort(d)}</th>`;
-        });
-        headHtml += '</tr>';
-        managerTableHead.innerHTML = headHtml;
-
-        if (s.managers.length === 0) {
-            managerTableBody.innerHTML = `<tr><td colspan="${dates.length + 2}" class="empty-state">暂无负责人数据，请先上传配置表</td></tr>`;
-            managerCountSpan.textContent = '';
-            return;
-        }
-
-        let bodyHtml = '';
-        s.managers.forEach(m => {
-            bodyHtml += '<tr>';
-            bodyHtml += `<td>${m.name}${m.name === '未分配' ? '<span class="unmatched-badge">未匹配</span>' : ''}</td>`;
-            bodyHtml += `<td>${m.total}</td>`;
-            dates.forEach(d => {
-                bodyHtml += `<td>${m.daily.get(d) || 0}</td>`;
-            });
-            bodyHtml += '</tr>';
-        });
-        managerTableBody.innerHTML = bodyHtml;
-        managerCountSpan.textContent = `共 ${s.managers.length} 位负责人`;
-    }
-
-    function getCellValue(row, colIndex) {
-        if (colIndex < 0 || !row) return '';
-        const val = row[colIndex];
-        return val !== undefined && val !== null ? val : '';
-    }
-
-    // ========== 导出功能 ==========
-    function exportSummary() {
-        if (!statistics) return;
-        const s = statistics;
-        const exportRows = [['用户昵称', '用户UID', '总作品数', 'S+', 'S', 'A+', 'A', 'B&B+', 'S率']];
-        s.creators.forEach(c => {
-            exportRows.push([c.nickname, c.uid, c.total, c['S+'], c['S'], c['A+'], c['A'], c['B&B+'], c.sRate + '%']);
-        });
-        const ws = XLSX.utils.aoa_to_sheet(exportRows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, '创作者汇总');
-        XLSX.writeFile(wb, `创作者汇总_${s.rangeEnd}.xlsx`);
-    }
-
-    function exportDetailMulti() {
-        if (!statistics || rawRows.length === 0) return;
-        const s = statistics;
-        const wb = XLSX.utils.book_new();
-
-        const groupedByCreator = new Map();
-        parsedData.forEach(rec => {
-            const key = rec.uid + '__' + rec.nickname;
-            if (!groupedByCreator.has(key)) groupedByCreator.set(key, []);
-            groupedByCreator.get(key).push(rec);
-        });
-
-        s.creators.forEach(c => {
-            const key = c.uid + '__' + c.nickname;
-            const records = groupedByCreator.get(key) || [];
-            
-            const detailRows = [];
-            detailRows.push(['作品发布日期', '作品 ID', '分享链接', '作品标题', '下架状态', '作品评级', '任务数', '浏览量', '点赞数', '评论数', 'Remix数', '本周S作品数', '本周S率', '总作品数']);
-            
-            records.forEach((rec, index) => {
-                const row = rawRows[rec.rowIndex];
-                const baseData = [
-                    rec.publishDateStr,
-                    getCellValue(row, colMap.workId),
-                    getCellValue(row, colMap.shareLink),
-                    getCellValue(row, colMap.title),
-                    rec.offlineStatus,
-                    rec.rating || '',
-                    getCellValue(row, colMap.taskCount),
-                    getCellValue(row, colMap.viewCount),
-                    getCellValue(row, colMap.likeCount),
-                    getCellValue(row, colMap.commentCount),
-                    getCellValue(row, colMap.remixCount)
-                ];
-                if (index === 0) {
-                    detailRows.push([...baseData, c.weekSCount, c.weekSRate + '%', c.total]);
+                if (s.creators.length === 0) {
+                    creatorTableBody.innerHTML = `<tr><td colspan="10" class="empty-state">暂无创作者数据</td></tr>`;
+                    creatorCountSpan.textContent = '';
                 } else {
-                    detailRows.push([...baseData, '', '', '']);
+                    let rowsHtml = '';
+                    s.creators.forEach(c => {
+                        rowsHtml += `<tr><td>${c.nickname}</td><td>${c.uid}</td><td>${c.total}</td><td>${c['S+']}</td><td>${c['S']}</td><td>${c['A+']}</td><td>${c['A']}</td><td>${c['B+']}</td><td>${c['B']}</td><td>${c.sRate}%</td></tr>`;
+                    });
+                    creatorTableBody.innerHTML = rowsHtml;
+                    creatorCountSpan.textContent = `共 ${s.creators.length} 位创作者`;
+                }
+
+                auditStatsCards.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-label">📊 评级总量</div>
+                        <div class="stat-value">${s.totalRated}<span class="stat-unit">条</span></div>
+                        <div style="font-size:13px;color:#6b7280;margin-top:4px;">日均评级: ${s.dailyAvgRated} 条</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">❓ 未评级量</div>
+                        <div class="stat-value">${s.unratedCount}<span class="stat-unit">条</span></div>
+                        <div style="font-size:13px;color:#6b7280;margin-top:4px;">占比: ${s.unratedPercent}%</div>
+                    </div>
+                `;
+
+                renderChart();
+                renderEfficiencyTable();
+                renderAuditDetailTable();
+            }
+
+            function renderChart() {
+                const s = statistics;
+                const dates = s.allDates;
+                const data = dates.map(d => s.dailyRatedCount.get(d) || 0);
+
+                const ctx = document.getElementById('ratingChart').getContext('2d');
+                if (ratingChart) ratingChart.destroy();
+
+                ratingChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates.map(d => formatDateShort(d)),
+                        datasets: [{
+                            label: '每日评级总量',
+                            data: data,
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#4f46e5',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { title: { display: true, text: '日期' } },
+                            y: { title: { display: true, text: '评级总量' }, beginAtZero: true,
+                                ticks: { callback: (v) => v + ' 条' } }
+                        }
+                    }
+                });
+            }
+
+            function renderEfficiencyTable() {
+                const s = statistics;
+                const auditors = s.sortedAuditors.filter(a => a !== '未分配');
+
+                let headHtml = '<tr><th>日期</th>';
+                auditors.forEach(a => { headHtml += `<th>${a}</th>`; });
+                headHtml += '<th>平均人效</th><th>最高人效</th></tr>';
+                efficiencyTableHead.innerHTML = headHtml;
+
+                if (auditors.length === 0) {
+                    efficiencyTableBody.innerHTML = `<tr><td colspan="3" class="empty-state">暂无审核人数据，请先上传/输入配置</td></tr>`;
+                    return;
+                }
+
+                let bodyHtml = '';
+                s.efficiencyData.forEach(row => {
+                    bodyHtml += '<tr>';
+                    bodyHtml += `<td>${formatDateChinese(row.date)}</td>`;
+                    auditors.forEach(a => { bodyHtml += `<td>${row[a] || 0}</td>`; });
+                    bodyHtml += `<td>${row.avg}</td>`;
+                    bodyHtml += `<td>${row.max}</td>`;
+                    bodyHtml += '</tr>';
+                });
+                efficiencyTableBody.innerHTML = bodyHtml;
+            }
+
+            function renderAuditDetailTable() {
+                const s = statistics;
+                let bodyHtml = '';
+
+                s.auditDetailData.forEach(group => {
+                    bodyHtml += `<tr class="date-separator"><td colspan="10">📅 ${formatDateChinese(group.date)}</td></tr>`;
+                    group.auditors.forEach(row => {
+                        bodyHtml += '<tr>';
+                        bodyHtml += `<td>${formatDateChinese(row.date)}</td>`;
+                        bodyHtml += `<td>${row.auditor}${row.auditor === '未分配' ? '<span class="unmatched-badge">未匹配</span>' : ''}</td>`;
+                        bodyHtml += `<td>${row['S+']}</td><td>${row['S']}</td><td>${row['A+']}</td><td>${row['A']}</td><td>${row['B+']}</td><td>${row['B']}</td><td>${row.unratable}</td><td>${row.total}</td>`;
+                        bodyHtml += '</tr>';
+                    });
+                    const tr = group.totalRow;
+                    bodyHtml += '<tr class="total-row">';
+                    bodyHtml += `<td>${formatDateChinese(tr.date)}</td><td>${tr.auditor}</td>`;
+                    bodyHtml += `<td>${tr['S+']}</td><td>${tr['S']}</td><td>${tr['A+']}</td><td>${tr['A']}</td><td>${tr['B+']}</td><td>${tr['B']}</td><td>${tr.unratable}</td><td>${tr.total}</td>`;
+                    bodyHtml += '</tr>';
+                });
+
+                if (!bodyHtml) bodyHtml = '<tr><td colspan="10" class="empty-state">暂无数据</td></tr>';
+                auditDetailTableBody.innerHTML = bodyHtml;
+            }
+
+            // ========== 导出功能 ==========
+            function setNumberColumns(ws, numCols) {
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r + 1; R <= range.e.r; R++) {
+                    for (const C of numCols) {
+                        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (ws[cellRef] && ws[cellRef].v !== undefined && ws[cellRef].v !== '') {
+                            const val = parseFloat(ws[cellRef].v);
+                            if (!isNaN(val)) {
+                                ws[cellRef].t = 'n';
+                                ws[cellRef].v = val;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function exportSummary() {
+                if (!statistics) return;
+                const s = statistics;
+                const exportRows = [['用户昵称', '用户UID', '总作品数', 'S+', 'S', 'A+', 'A', 'B+', 'B', 'S率']];
+                s.creators.forEach(c => {
+                    exportRows.push([c.nickname, c.uid, c.total, c['S+'], c['S'], c['A+'], c['A'], c['B+'], c['B'], c.sRate + '%']);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(exportRows);
+                setNumberColumns(ws, [2, 3, 4, 5, 6, 7, 8]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '创作者汇总');
+                XLSX.writeFile(wb, `创作者汇总_${s.rangeEnd}.xlsx`);
+            }
+
+            function exportFull() {
+                if (!statistics || rawRows.length === 0) return;
+                const s = statistics;
+                const wb = XLSX.utils.book_new();
+
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rawRows), '原始数据');
+
+                const summaryRows = [['用户昵称', '用户UID', '总作品数', 'S+', 'S', 'A+', 'A', 'B+', 'B', 'S率']];
+                s.creators.forEach(c => {
+                    summaryRows.push([c.nickname, c.uid, c.total, c['S+'], c['S'], c['A+'], c['A'], c['B+'], c['B'], c.sRate + '%']);
+                });
+                const ws2 = XLSX.utils.aoa_to_sheet(summaryRows);
+                setNumberColumns(ws2, [2, 3, 4, 5, 6, 7, 8]);
+                XLSX.utils.book_append_sheet(wb, ws2, '人员汇总');
+
+                const groupedByCreator = new Map();
+                parsedData.forEach(rec => {
+                    const key = rec.uid + '__' + rec.nickname;
+                    if (!groupedByCreator.has(key)) groupedByCreator.set(key, []);
+                    groupedByCreator.get(key).push(rec);
+                });
+
+                s.creators.forEach(c => {
+                    const records = groupedByCreator.get(c.uid + '__' + c.nickname) || [];
+                    records.sort((a, b) => {
+                        if (!a.publishDate && !b.publishDate) return 0;
+                        if (!a.publishDate) return 1;
+                        if (!b.publishDate) return -1;
+                        return a.publishDate - b.publishDate;
+                    });
+
+                    const detailRows = [['作品发布日期', '作品ID', '分享链接', '作品标题', '下架状态', '作品评级', '任务数', '浏览量', '点赞数', '评论数', 'Remix数', '本周S作品数', '本周S率', '总作品数']];
+                    records.forEach((rec, index) => {
+                        const row = rawRows[rec.rowIndex];
+                        const baseData = [
+                            rec.publishDateStr,
+                            getCellValue(row, colMap.workId),
+                            getCellValue(row, colMap.shareLink),
+                            getCellValue(row, colMap.title),
+                            rec.offlineStatus,
+                            rec.rating || '',
+                            getCellValue(row, colMap.taskCount),
+                            getCellValue(row, colMap.viewCount),
+                            getCellValue(row, colMap.likeCount),
+                            getCellValue(row, colMap.commentCount),
+                            getCellValue(row, colMap.remixCount)
+                        ];
+                        if (index === 0) {
+                            const sCount = (c['S+'] || 0) + (c['S'] || 0);
+                            detailRows.push([...baseData, sCount, c.sRate + '%', c.total]);
+                        } else {
+                            detailRows.push([...baseData, '', '', '']);
+                        }        
+                    });
+
+                    let sheetName = c.nickname.replace(/[\\\/\?\*\[\]:]/g, '').substring(0, 31) || c.uid.substring(0, 31);
+                    const ws = XLSX.utils.aoa_to_sheet(detailRows);
+                    setNumberColumns(ws, [2, 6, 7, 8, 9, 10]);
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
+
+                XLSX.writeFile(wb, `总表_${s.rangeEnd}.xlsx`);
+            }
+
+            function exportEfficiency() {
+                if (!statistics) return;
+                const s = statistics;
+                const auditors = s.sortedAuditors.filter(a => a !== '未分配');
+                const headerRow = ['日期'];
+                auditors.forEach(a => headerRow.push(a));
+                headerRow.push('平均人效', '最高人效');
+
+                const exportRows = [headerRow];
+                s.efficiencyData.forEach(row => {
+                    const exportRow = [row.date];
+                    auditors.forEach(a => exportRow.push(row[a] || 0));
+                    exportRow.push(parseFloat(row.avg) || 0, row.max);
+                    exportRows.push(exportRow);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(exportRows);
+                const numCols = [];
+                for (let i = 1; i <= auditors.length + 2; i++) numCols.push(i);
+                setNumberColumns(ws, numCols);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '审核人效统计');
+                XLSX.writeFile(wb, `审核人效统计_${s.rangeEnd}.xlsx`);
+            }
+
+            function exportAuditDetail() {
+                if (!statistics) return;
+                const s = statistics;
+                const wb = XLSX.utils.book_new();
+
+                const detailRows1 = [];
+                let isFirstDate = true;
+                s.auditDetailData.forEach((group, groupIndex) => {
+                     if (!isFirstDate) {
+        // 空一行
+                        detailRows1.push(['', '', '', '', '', '', '', '', '', '']);
+        // 重复表头
+                        detailRows1.push(['日期', '审核人', 'S+', 'S', 'A+', 'A', 'B+', 'B', '无法评级', '审核量级合计']);
+                    }
+                    isFirstDate = false;
+    
+                    group.auditors.forEach(row => {
+                        detailRows1.push([row.date, row.auditor, row['S+'], row['S'], row['A+'], row['A'], row['B+'], row['B'], row.unratable, row.total]);
+                    });
+                    detailRows1.push([group.totalRow.date, group.totalRow.auditor, group.totalRow['S+'], group.totalRow['S'], group.totalRow['A+'], group.totalRow['A'], group.totalRow['B+'], group.totalRow['B'], group.totalRow.unratable, group.totalRow.total]);
+                });
+
+
+                const ws1 = XLSX.utils.aoa_to_sheet(detailRows1);
+                setNumberColumns(ws1, [2, 3, 4, 5, 6, 7, 8, 9]);
+                XLSX.utils.book_append_sheet(wb, ws1, '每日审核明细');
+                // Sheet2: 原始数据
+                const wsRaw = XLSX.utils.aoa_to_sheet(rawRows);
+                XLSX.utils.book_append_sheet(wb, wsRaw, '原始数据');
+
+                const workDetailRows = [['用户昵称', '作品ID', '作品评级', '标签', '审核人']];
+                const sortedData = [...parsedData].sort((a, b) => {
+                    if (!a.publishDate && !b.publishDate) return 0;
+                    if (!a.publishDate) return 1;
+                    if (!b.publishDate) return -1;
+                    return a.publishDate - b.publishDate;
+                });
+                sortedData.forEach(rec => {
+                    const row = rawRows[rec.rowIndex];
+                    const auditor = findManager(rec.publishDateStr, rec.nickname) || '未分配';
+                    workDetailRows.push([rec.nickname, getCellValue(row, colMap.workId), rec.rating || '', rec.tags, auditor]);
+                });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(workDetailRows), '作品明细');
+
+
+                const configRows = [['日期', '创作者昵称', '负责人']];
+                for (const [key, value] of managerMap) {
+                    const parts = key.split('__');
+                    if (parts.length === 2) configRows.push([parts[0], parts[1], value]);
+                }
+                if (configRows.length === 1) configRows.push(['', '', '']);
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(configRows), '审核配置表');
+
+                XLSX.writeFile(wb, `每日审核明细_${s.rangeEnd}.xlsx`);
+            }
+
+            // ========== 事件绑定 ==========
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+            uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) parseFile(file);
+            });
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) parseFile(file);
+                fileInput.value = '';
+            });
+
+            const configTabs = document.querySelectorAll('.config-tab');
+            configTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const mode = this.dataset.tab;
+                    if (activeConfigMode === mode) return;
+                    if (managerMap.size > 0) {
+                        if (confirm('切换输入方式将清空已有配置数据，是否继续？')) {
+                            clearConfig();
+                        } else {
+                            return;
+                        }
+                    }
+                    activeConfigMode = mode;
+                    configTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    if (mode === 'upload') {
+                        uploadTabContent.style.display = 'block';
+                        manualInputArea.classList.remove('active');
+                    } else {
+                        uploadTabContent.style.display = 'none';
+                        manualInputArea.classList.add('active');
+                    }
+                });
+            });
+
+            configUploadArea.addEventListener('click', (e) => {
+                if (activeConfigMode === 'upload' && !e.target.closest('.config-tab') && !e.target.closest('#manualInputArea') && !e.target.closest('textarea') && !e.target.closest('button')) {
+                    configFileInput.click();
                 }
             });
-
-            let sheetName = c.nickname.replace(/[\\\/\?\*\[\]:]/g, '').substring(0, 31);
-            if (!sheetName) sheetName = c.uid.substring(0, 31);
-            
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detailRows), sheetName);
-        });
-
-        XLSX.writeFile(wb, `创作者明细_分Sheet_${s.rangeEnd}.xlsx`);
-    }
-
-    function exportFull() {
-        if (!statistics || rawRows.length === 0) return;
-        const s = statistics;
-        const wb = XLSX.utils.book_new();
-
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rawRows), '原始数据');
-
-        const summaryRows = [['用户昵称', '总作品数', '本周S率']];
-        s.creators.forEach(c => summaryRows.push([c.nickname, c.total, c.weekSRate + '%']));
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryRows), '人员汇总');
-
-        const groupedByCreator = new Map();
-        parsedData.forEach(rec => {
-            const key = rec.uid + '__' + rec.nickname;
-            if (!groupedByCreator.has(key)) groupedByCreator.set(key, []);
-            groupedByCreator.get(key).push(rec);
-        });
-
-        s.creators.forEach(c => {
-            const records = groupedByCreator.get(c.uid + '__' + c.nickname) || [];
-            const detailRows = [];
-            detailRows.push(['作品发布日期', '作品 ID', '分享链接', '作品标题', '下架状态', '作品评级', '任务数', '浏览量', '点赞数', '评论数', 'Remix数', '本周S作品数', '本周S率', '总作品数']);
-            
-            records.forEach((rec, index) => {
-                const row = rawRows[rec.rowIndex];
-                const baseData = [
-                    rec.publishDateStr,
-                    getCellValue(row, colMap.workId),
-                    getCellValue(row, colMap.shareLink),
-                    getCellValue(row, colMap.title),
-                    rec.offlineStatus,
-                    rec.rating || '',
-                    getCellValue(row, colMap.taskCount),
-                    getCellValue(row, colMap.viewCount),
-                    getCellValue(row, colMap.likeCount),
-                    getCellValue(row, colMap.commentCount),
-                    getCellValue(row, colMap.remixCount)
-                ];
-                detailRows.push(index === 0 ? [...baseData, c.weekSCount, c.weekSRate + '%', c.total] : [...baseData, '', '', '']);
+            configFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) parseConfigFile(file);
+                configFileInput.value = '';
             });
 
-            let sheetName = c.nickname.replace(/[\\\/\?\*\[\]:]/g, '').substring(0, 31) || c.uid.substring(0, 31);
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detailRows), sheetName);
-        });
+            confirmManualConfigBtn.addEventListener('click', () => {
+                parseManualConfig(manualConfigInput.value);
+            });
 
-        XLSX.writeFile(wb, `总表_${s.rangeEnd}.xlsx`);
-    }
+            exportSummaryBtn.addEventListener('click', exportSummary);
+            exportFullBtn.addEventListener('click', exportFull);
+            exportEfficiencyBtn.addEventListener('click', exportEfficiency);
+            exportAuditDetailBtn.addEventListener('click', exportAuditDetail);
 
-    function exportManager() {
-        if (!statistics) return;
-        const s = statistics;
-        const dates = s.allDates;
-        
-        const exportRows = [];
-        const headerRow = ['负责人', '总审核量'];
-        dates.forEach(d => headerRow.push(formatDateShort(d)));
-        exportRows.push(headerRow);
-        
-        s.managers.forEach(m => {
-            const row = [m.name, m.total];
-            dates.forEach(d => row.push(m.daily.get(d) || 0));
-            exportRows.push(row);
-        });
-        
-        const ws = XLSX.utils.aoa_to_sheet(exportRows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, '负责人维度分析');
-        XLSX.writeFile(wb, `负责人分析_${s.rangeEnd}.xlsx`);
-    }
-
-    // ========== 事件绑定 ==========
-    uploadArea.addEventListener('click', () => fileInput.click());
-    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file) parseFile(file);
-    });
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) parseFile(file);
-        fileInput.value = '';
-    });
-
-    configUploadArea.addEventListener('click', () => configFileInput.click());
-    configUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); configUploadArea.classList.add('dragover'); });
-    configUploadArea.addEventListener('dragleave', () => configUploadArea.classList.remove('dragover'));
-    configUploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        configUploadArea.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file) parseConfigFile(file);
-    });
-    configFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) parseConfigFile(file);
-        configFileInput.value = '';
-    });
-
-    exportSummaryBtn.addEventListener('click', exportSummary);
-    exportDetailMultiBtn.addEventListener('click', exportDetailMulti);
-    exportFullBtn.addEventListener('click', exportFull);
-    exportManagerBtn.addEventListener('click', exportManager);
-
-    statsContainer.style.display = 'none';
-})();
-</script>
+            statsContainer.style.display = 'none';
+            uploadTabContent.style.display = 'block';
+        })();
+    </script>
 </body>
 </html>
